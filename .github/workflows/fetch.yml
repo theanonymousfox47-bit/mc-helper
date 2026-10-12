@@ -1,17 +1,27 @@
-name: Fetch Offline Metadata
+name: Fetch Offline Patch
 on: [workflow_dispatch]
 jobs:
-  get-offline-meta:
+  get-offline-patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch and Patch 1.20.4 JSON for Offline
+      - name: Fetch and Convert 1.20.4 JSON for Prism
         run: |
           VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
           curl -s "$VERSION_URL" -o raw.json
-          # Remove all remote download links so Prism Launcher relies purely on local files
-          jq 'del(.libraries[].downloads) | del(.downloads)' raw.json > net.minecraft.json
+          
+          # Convert raw metadata into Prism patch format with empty download declarations
+          jq '{
+            formatVersion: 1,
+            name: "Minecraft",
+            version: "1.20.4",
+            uid: "net.minecraft",
+            mainClass: .mainClass,
+            minecraftArguments: .minecraftArguments,
+            libraries: [.libraries[] | .downloads = {}]
+          }' raw.json > net.minecraft.json
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: offline-metadata
+          name: offline-patch
           path: net.minecraft.json
