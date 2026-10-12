@@ -1,19 +1,14 @@
-name: Fetch Jar and Metadata
+name: Fetch Java and Minecraft
 on: [workflow_dispatch]
 jobs:
   get-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Files
+      - name: Download Portable Java 17
         run: |
-          VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
-          curl -s "$VERSION_URL" -o 1.20.4.json
-          CLIENT_URL=$(jq -r '.downloads.client.url' 1.20.4.json)
-          curl -L -o 1.20.4.jar "$CLIENT_URL"
-      - name: Upload Artifact
+          curl -L -o java17.zip https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.10_7.zip
+      - name: Upload Java Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minecraft-components
-          path: |
-            1.20.4.json
-            1.20.4.jar
+          name: portable-java
+          path: java17.zip
