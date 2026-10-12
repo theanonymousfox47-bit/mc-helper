@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download from Mojang
-        run: curl -o 1.20.4.jar https://piston-data.mojang.com/v1/objects/8c325a0c5b4247e196b7783ee6d220968538ef80/client.jar
+        run: curl -L -o 1.20.4.jar https://piston-data.mojang.com/v1/objects/8c325a0c5b4247e196b7783ee6d220968538ef80/client.jar
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
