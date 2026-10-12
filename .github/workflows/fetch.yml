@@ -1,17 +1,19 @@
-name: Fetch Jar
+name: Fetch Jar and Metadata
 on: [workflow_dispatch]
 jobs:
-  get-jar:
+  get-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch 1.20.4 Client Jar
+      - name: Download Files
         run: |
           VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
-          CLIENT_URL=$(curl -s "$VERSION_URL" | jq -r '.downloads.client.url')
-          echo "Downloading from: $CLIENT_URL"
+          curl -s "$VERSION_URL" -o 1.20.4.json
+          CLIENT_URL=$(jq -r '.downloads.client.url' 1.20.4.json)
           curl -L -o 1.20.4.jar "$CLIENT_URL"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minecraft-jar
-          path: 1.20.4.jar
+          name: minecraft-components
+          path: |
+            1.20.4.json
+            1.20.4.jar
