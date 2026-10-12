@@ -1,15 +1,17 @@
-name: Fetch Metadata
+name: Fetch Offline Metadata
 on: [workflow_dispatch]
 jobs:
-  get-meta:
+  get-offline-meta:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch 1.20.4 JSON
+      - name: Fetch and Patch 1.20.4 JSON for Offline
         run: |
           VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
-          curl -s "$VERSION_URL" -o net.minecraft.json
+          curl -s "$VERSION_URL" -o raw.json
+          # Remove all remote download links so Prism Launcher relies purely on local files
+          jq 'del(.libraries[].downloads) | del(.downloads)' raw.json > net.minecraft.json
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: full-metadata
+          name: offline-metadata
           path: net.minecraft.json
