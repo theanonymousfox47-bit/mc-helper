@@ -1,24 +1,15 @@
-name: Fetch Minecraft Libraries
+name: Fetch Metadata
 on: [workflow_dispatch]
 jobs:
-  get-libraries:
+  get-meta:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Libraries
+      - name: Fetch 1.20.4 JSON
         run: |
           VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
-          curl -s "$VERSION_URL" -o version.json
-          
-          mkdir -p libraries
-          jq -r '.libraries[].downloads.artifact.url // empty' version.json | while read -r url; do
-            path=$(echo "$url" | sed 's|https://libraries.minecraft.net/||')
-            mkdir -p "libraries/$(dirname "$path")"
-            curl -s -L -o "libraries/$path" "$url"
-          done
-          
-          zip -r libraries.zip libraries
+          curl -s "$VERSION_URL" -o net.minecraft.json
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minecraft-libraries
-          path: libraries.zip
+          name: full-metadata
+          path: net.minecraft.json
