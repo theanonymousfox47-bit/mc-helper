@@ -1,14 +1,24 @@
-name: Fetch Java and Minecraft
+name: Fetch Minecraft Libraries
 on: [workflow_dispatch]
 jobs:
-  get-files:
+  get-libraries:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Portable Java 17
+      - name: Download Libraries
         run: |
-          curl -L -o java17.zip https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.10_7.zip
-      - name: Upload Java Artifact
+          VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
+          curl -s "$VERSION_URL" -o version.json
+          
+          mkdir -p libraries
+          jq -r '.libraries[].downloads.artifact.url // empty' version.json | while read -r url; do
+            path=$(echo "$url" | sed 's|https://libraries.minecraft.net/||')
+            mkdir -p "libraries/$(dirname "$path")"
+            curl -s -L -o "libraries/$path" "$url"
+          done
+          
+          zip -r libraries.zip libraries
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: portable-java
-          path: java17.zip
+          name: minecraft-libraries
+          path: libraries.zip
