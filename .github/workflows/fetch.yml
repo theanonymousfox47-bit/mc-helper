@@ -1,17 +1,44 @@
-name: Fetch Roblox Installer
+name: Universal Asset Fetcher
 
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Select item to fetch'
+        required: true
+        default: 'minecraft-libraries'
+        type: choice
+        options:
+          - minecraft-libraries
+          - roblox-installer
 
 jobs:
-  get-roblox:
+  fetch-asset:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Roblox Player Launcher
+      - name: Fetch Minecraft Libraries
+        if: github.event.inputs.target == 'minecraft-libraries'
         run: |
-          curl -s -L "https://setup.roblox.com/RobloxPlayerLauncher.exe" -o RobloxPlayerLauncher.exe
+          VERSION_URL=$(curl -s https://launchermeta.mojang.com/mc/game/version_manifest.json | jq -r '.versions[] | select(.id=="1.20.4") | .url')
+          curl -s "$VERSION_URL" -o version.json
           
+          mkdir -p libraries
+          jq -r '.libraries[].downloads.artifact.url // empty' version.json | while read -r url; do
+            path=$(echo "$url" | sed 's|https://libraries.minecraft.net/||')
+            mkdir -p "libraries/$(dirname "$path")"
+            curl -s -L -o "libraries/$path" "$url"
+          done
+          
+          zip -r artifact.zip libraries
+
+      - name: Fetch Roblox Installer
+        if: github.event.inputs.target == 'roblox-installer'
+        run: |
+          curl -s -k -L "https://setup.roblox.com/RobloxPlayerLauncher.exe" -o artifact.exe
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: roblox-installer
-          path: RobloxPlayerLauncher.exe
+          name: fetched-asset
+          path: artifact.*
+          if-no-files-found: warn
